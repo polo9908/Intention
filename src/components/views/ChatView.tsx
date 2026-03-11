@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '@/store/useChatStore'
 import { ThinkingSequence } from '@/components/chat/ThinkingSequence'
+import { ComponentResultCard } from '@/components/chat/results/ComponentResultCard'
+import { matchScenario } from '@/lib/scenarios'
 
 // ── Thinking steps by intent ──────────────────────────────────────────────────
 
@@ -52,7 +54,7 @@ const QUICK_PROMPTS = [
 // ── ChatView ──────────────────────────────────────────────────────────────────
 
 export function ChatView() {
-  const { messages, addUserMessage, clearMessages } = useChatStore()
+  const { messages, addUserMessage, addResult, clearMessages } = useChatStore()
   const [draft, setDraft] = useState('')
   const [thinkingId, setThinkingId] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -223,9 +225,18 @@ export function ChatView() {
                     <div style={{ paddingLeft: 4 }}>
                       <ThinkingSequence
                         steps={getThinkingSteps(msg.text)}
-                        onComplete={() => setThinkingId(null)}
+                        onComplete={() => {
+                          const scenario = matchScenario(msg.text ?? '', messages.length)
+                          addResult(scenario, null)
+                          setThinkingId(null)
+                        }}
                       />
                     </div>
+                  )}
+
+                  {/* Result card — component type */}
+                  {msg.type === 'result' && msg.scenario?.type === 'component' && (
+                    <ComponentResultCard scenario={msg.scenario} />
                   )}
 
                 </div>
