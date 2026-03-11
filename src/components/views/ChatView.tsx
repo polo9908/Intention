@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '@/store/useChatStore'
 import { ThinkingSequence } from '@/components/chat/ThinkingSequence'
 import { ComponentResultCard } from '@/components/chat/results/ComponentResultCard'
+import { AgentResultCard }     from '@/components/chat/results/AgentResultCard'
 import { matchScenario } from '@/lib/scenarios'
 
 // ── Thinking steps by intent ──────────────────────────────────────────────────
@@ -237,6 +238,11 @@ export function ChatView() {
                   {/* Result card — component type */}
                   {msg.type === 'result' && msg.scenario?.type === 'component' && (
                     <ComponentResultCard scenario={msg.scenario} />
+                  )}
+
+                  {/* Result card — agent type */}
+                  {msg.type === 'result' && msg.scenario?.type === 'agent' && (
+                    <AgentResultCard scenario={msg.scenario} />
                   )}
 
                 </div>
