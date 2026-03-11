@@ -64,6 +64,16 @@ input, textarea { font: inherit; }
 /* ── Selection ─────────────────────────────────────────────────────────────── */
 ::selection { background: var(--accent-dim); color: var(--accent); }
 
+/* ── ThinkingSequence dot pulse ─────────────────────────────────────────────── */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.dot-active {
+  animation: dot-pulse 900ms ease-in-out infinite;
+}
+
 /* ── Textarea placeholder ───────────────────────────────────────────────────── */
 textarea.chat-input::placeholder {
   font-style: italic;

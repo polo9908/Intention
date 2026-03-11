@@ -2,6 +2,35 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '@/store/useChatStore'
+import { ThinkingSequence } from '@/components/chat/ThinkingSequence'
+
+// ── Thinking steps by intent ──────────────────────────────────────────────────
+
+function getThinkingSteps(text: string): string[] {
+  const t = text.toLowerCase()
+  if (t.includes('agent') || t.includes('advisor') || t.includes('anxieux') || t.includes('escalade')) {
+    return [
+      'Analyse de l\'intention comportementale…',
+      'Extraction des contraintes AgentSpec…',
+      'Calibrage des nœuds persona + guardrails…',
+      'Génération de la spec agent…',
+    ]
+  }
+  if (t.includes('watch') || t.includes('wearable') || t.includes('adapt') || t.includes('series')) {
+    return [
+      'Détection de la plateforme cible…',
+      'Identification des mutations nécessaires…',
+      'Propagation des tokens hérités…',
+      'Génération du diff d\'adaptation…',
+    ]
+  }
+  return [
+    'Analyse du contexte produit…',
+    'Extraction des tokens sémantiques…',
+    'Résolution des règles et contraintes…',
+    'Génération du composant…',
+  ]
+}
 
 // ── Quick prompts ─────────────────────────────────────────────────────────────
 
@@ -25,10 +54,12 @@ const QUICK_PROMPTS = [
 export function ChatView() {
   const { messages, addUserMessage, clearMessages } = useChatStore()
   const [draft, setDraft] = useState('')
+  const [thinkingId, setThinkingId] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef    = useRef<HTMLDivElement>(null)
   const bottomRef    = useRef<HTMLDivElement>(null)
   const hasMessages  = messages.length > 0
+  const isThinking   = thinkingId !== null
 
   /* ── Auto-resize textarea ── */
   const resize = useCallback(() => {
@@ -48,11 +79,12 @@ export function ChatView() {
   /* ── Submit ── */
   const submit = useCallback(() => {
     const text = draft.trim()
-    if (!text) return
-    addUserMessage(text)
+    if (!text || isThinking) return
+    const id = addUserMessage(text)
+    setThinkingId(id)
     setDraft('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-  }, [draft, addUserMessage])
+  }, [draft, addUserMessage, isThinking])
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -66,7 +98,7 @@ export function ChatView() {
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
-  const canSend = draft.trim().length > 0
+  const canSend = draft.trim().length > 0 && !isThinking
 
   return (
     <div
@@ -162,7 +194,9 @@ export function ChatView() {
               }}
             >
               {messages.map((msg) => (
-                <div key={msg.id}>
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                  {/* User bubble */}
                   {msg.type === 'user' && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <div
@@ -183,6 +217,17 @@ export function ChatView() {
                       </div>
                     </div>
                   )}
+
+                  {/* Thinking sequence — shown after user message while processing */}
+                  {msg.type === 'user' && thinkingId === msg.id && msg.text && (
+                    <div style={{ paddingLeft: 4 }}>
+                      <ThinkingSequence
+                        steps={getThinkingSteps(msg.text)}
+                        onComplete={() => setThinkingId(null)}
+                      />
+                    </div>
+                  )}
+
                 </div>
               ))}
 
