@@ -63,3 +63,12 @@ input, textarea { font: inherit; }
 
 /* ── Selection ─────────────────────────────────────────────────────────────── */
 ::selection { background: var(--accent-dim); color: var(--accent); }
+
+/* ── Textarea placeholder ───────────────────────────────────────────────────── */
+textarea.chat-input::placeholder {
+  font-style: italic;
+  color: var(--text-muted);
+}
+textarea.chat-input:focus::placeholder {
+  color: rgba(68, 68, 68, 0.6);
+}
