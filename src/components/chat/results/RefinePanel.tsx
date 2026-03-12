@@ -89,7 +89,7 @@ export function RefinePanel({
               style={{
                 fontFamily:    'var(--font-mono)',
                 fontSize:      9,
-                color:         'var(--text-muted)',
+                color:         'var(--text-secondary)',
                 letterSpacing: '0.08em',
               }}
             >
@@ -97,8 +97,8 @@ export function RefinePanel({
             </span>
           </div>
 
-          {/* ── Body: 2-col ────────────────────────────────────────────── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 190px' }}>
+          {/* ── Body: 2-col — options 30% / preview 70% ────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 7fr' }}>
 
             {/* Left — option buttons */}
             <div
@@ -297,15 +297,14 @@ function DiffPreview({
             flexDirection: 'column',
             alignItems:    'center',
             gap:           8,
-            opacity:       0.28,
           }}
         >
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>←</span>
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>←</span>
           <span
             style={{
               fontFamily:    'var(--font-mono)',
               fontSize:      9,
-              color:         'var(--text-muted)',
+              color:         'var(--text-secondary)',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               textAlign:     'center',
@@ -324,7 +323,7 @@ function DiffPreview({
             style={{
               fontFamily:    'var(--font-mono)',
               fontSize:      9,
-              color:         'var(--text-muted)',
+              color:         'var(--text-secondary)',
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
             }}

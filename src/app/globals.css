@@ -15,8 +15,8 @@
   --border-strong:   rgba(255, 255, 255, 0.12);
 
   --text:            #ebebeb;
-  --text-secondary:  #888;
-  --text-muted:      #444;
+  --text-secondary:  #999;
+  --text-muted:      #5e5e5e;   /* was #444 — ratio ~2.1:1, illisible sur #080809 */
 
   /* Status */
   --status-active:   #c8ff00;
