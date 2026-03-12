@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { AgentScenario, AgentNode, AgentSlider } from '@/types'
 import { RefinePanel }     from './RefinePanel'
 import type { RefineHint } from './RefinePanel'
+import { ExportModal }     from './ExportModal'
 
 // ── Refine hints (one per option in SC_ADVISOR.refine) ────────────────────────
 
@@ -35,17 +36,11 @@ const NODE_STATUS_LABEL: Record<AgentNode['status'], string> = {
 export function AgentResultCard({ scenario }: { scenario: AgentScenario }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [sliders, setSliders]         = useState<AgentSlider[]>(scenario.sliders)
-  const [exportDone, setExportDone]   = useState(false)
+  const [exportOpen, setExportOpen]   = useState(false)
   const [refineOpen, setRefineOpen]   = useState(false)
 
   const updateSlider = (key: string, value: number) =>
     setSliders((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)))
-
-  const handleExport = () => {
-    navigator.clipboard?.writeText(scenario.mcp).catch(() => {})
-    setExportDone(true)
-    setTimeout(() => setExportDone(false), 2000)
-  }
 
   const toggleNode = (idx: number) =>
     setExpandedIdx((prev) => (prev === idx ? null : idx))
@@ -88,9 +83,8 @@ export function AgentResultCard({ scenario }: { scenario: AgentScenario }) {
 
         {/* ── Action bar ───────────────────────────────────────────────── */}
         <AgentActionBar
-          exportDone={exportDone}
           refineOpen={refineOpen}
-          onExport={handleExport}
+          onExport={() => setExportOpen(true)}
           onToggleRefine={() => setRefineOpen((v) => !v)}
         />
       </div>
@@ -100,6 +94,16 @@ export function AgentResultCard({ scenario }: { scenario: AgentScenario }) {
         open={refineOpen}
         refines={scenario.refine}
         hints={AGENT_HINTS}
+        accentColor="#69ff9c"
+      />
+
+      {/* ── Export modal ─────────────────────────────────────────────── */}
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title={scenario.title}
+        mcp={scenario.mcp}
+        story={scenario.story}
         accentColor="#69ff9c"
       />
     </div>
@@ -495,12 +499,10 @@ function PersonaTile({ value, label }: { value: string; label: string }) {
 // ── AgentActionBar ────────────────────────────────────────────────────────────
 
 function AgentActionBar({
-  exportDone,
   refineOpen,
   onExport,
   onToggleRefine,
 }: {
-  exportDone:     boolean
   refineOpen:     boolean
   onExport:       () => void
   onToggleRefine: () => void
@@ -515,8 +517,8 @@ function AgentActionBar({
         gap:        8,
       }}
     >
-      <ActionBtn label={exportDone ? '✓ Copié' : 'Export MCP'} accent={exportDone} onClick={onExport} />
-      <ActionBtn label="Voir story" onClick={() => {}} />
+      <ActionBtn label="Export MCP" onClick={onExport} />
+      <ActionBtn label="Voir story" onClick={onExport} />
 
       <div style={{ flex: 1 }} />
 

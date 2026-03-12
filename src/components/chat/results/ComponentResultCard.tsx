@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import type { ComponentScenario, DesignToken } from '@/types'
 import { RefinePanel }      from './RefinePanel'
 import type { RefineHint }  from './RefinePanel'
+import { ExportModal }      from './ExportModal'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -151,17 +152,11 @@ const COMPONENT_HINTS: RefineHint[] = [
 export function ComponentResultCard({ scenario }: { scenario: ComponentScenario }) {
   const [tokens, setTokens]         = useState<DesignToken[]>(scenario.tokens)
   const [previewState, setPreviewState] = useState<PreviewState>('Default')
-  const [exportDone, setExportDone] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const [refineOpen, setRefineOpen] = useState(false)
 
   const updateToken = (idx: number, updated: DesignToken) =>
     setTokens((prev) => prev.map((t, i) => (i === idx ? updated : t)))
-
-  const handleExport = () => {
-    navigator.clipboard?.writeText(scenario.mcp).catch(() => {})
-    setExportDone(true)
-    setTimeout(() => setExportDone(false), 2000)
-  }
 
   return (
     <div>
@@ -213,9 +208,7 @@ export function ComponentResultCard({ scenario }: { scenario: ComponentScenario 
 
         {/* ── Action bar ───────────────────────────────────────────────── */}
         <ActionBar
-          onExport={handleExport}
-          exportDone={exportDone}
-          story={scenario.story}
+          onExport={() => setExportOpen(true)}
           refineOpen={refineOpen}
           onToggleRefine={() => setRefineOpen((v) => !v)}
         />
@@ -226,6 +219,16 @@ export function ComponentResultCard({ scenario }: { scenario: ComponentScenario 
         open={refineOpen}
         refines={scenario.refine}
         hints={COMPONENT_HINTS}
+        accentColor="#c8ff00"
+      />
+
+      {/* ── Export modal ─────────────────────────────────────────────── */}
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title={scenario.title}
+        mcp={scenario.mcp}
+        story={scenario.story}
         accentColor="#c8ff00"
       />
     </div>
@@ -805,19 +808,13 @@ function PreviewScreen({
 
 function ActionBar({
   onExport,
-  exportDone,
-  story,
   refineOpen,
   onToggleRefine,
 }: {
   onExport:       () => void
-  exportDone:     boolean
-  story:          string
   refineOpen:     boolean
   onToggleRefine: () => void
 }) {
-  const _ = story // consumed
-
   return (
     <div
       style={{
@@ -828,8 +825,8 @@ function ActionBar({
         gap: 8,
       }}
     >
-      <ActionButton label={exportDone ? '✓ Copié' : 'Export MCP'} accent={exportDone} onClick={onExport} />
-      <ActionButton label="Voir story" onClick={() => {}} />
+      <ActionButton label="Export MCP" onClick={onExport} />
+      <ActionButton label="Voir story" onClick={onExport} />
 
       <div style={{ flex: 1 }} />
 

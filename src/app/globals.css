@@ -64,6 +64,12 @@ input, textarea { font: inherit; }
 /* ── Selection ─────────────────────────────────────────────────────────────── */
 ::selection { background: var(--accent-dim); color: var(--accent); }
 
+/* ── Export modal slide-up ───────────────────────────────────────────────────── */
+@keyframes modal-slide-up {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
 /* ── ThinkingSequence dot pulse ─────────────────────────────────────────────── */
 @keyframes dot-pulse {
   0%, 100% { opacity: 1; }
