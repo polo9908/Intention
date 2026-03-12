@@ -2,6 +2,17 @@
 
 import { useState } from 'react'
 import type { AdaptScenario, Mutation } from '@/types'
+import { RefinePanel }     from './RefinePanel'
+import type { RefineHint } from './RefinePanel'
+
+// ── Refine hints (one per option in SC_WEARABLE.refine) ───────────────────────
+
+const ADAPT_HINTS: RefineHint[] = [
+  { prop: 'watch.target',       from: 'Series 8',  to: 'Series 9'    },
+  { prop: 'complication',       from: 'none',      to: 'corner-card' },
+  { prop: 'haptic.intensity',   from: 'medium',    to: 'heavy'       },
+  { prop: 'contrast',           from: 'WCAG AA',   to: 'WCAG AAA'   },
+]
 
 // ── Adapt accent ──────────────────────────────────────────────────────────────
 
@@ -13,7 +24,7 @@ const ADAPT_BORDER = 'rgba(255, 159, 67, 0.25)'
 
 export function AdaptResultCard({ scenario }: { scenario: AdaptScenario }) {
   const [exportDone, setExportDone] = useState(false)
-  const [showRefine, setShowRefine] = useState(false)
+  const [refineOpen, setRefineOpen] = useState(false)
 
   const handleExport = () => {
     navigator.clipboard?.writeText(scenario.mcp).catch(() => {})
@@ -25,52 +36,61 @@ export function AdaptResultCard({ scenario }: { scenario: AdaptScenario }) {
   const [source, target] = scenario.title.split('→').map((s) => s.trim())
 
   return (
-    <div
-      style={{
-        background: 'var(--surface-1)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r-lg)',
-        overflow: 'hidden',
-        width: '100%',
-      }}
-    >
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <AdaptHeader title={scenario.title} />
+    <div>
+      {/* ── Card shell ─────────────────────────────────────────────────── */}
+      <div
+        style={{
+          background:   'var(--surface-1)',
+          border:       '1px solid var(--border)',
+          borderRadius: refineOpen ? 'var(--r-lg) var(--r-lg) 0 0' : 'var(--r-lg)',
+          overflow:     'hidden',
+          width:        '100%',
+          transition:   'border-radius 0.01s',
+        }}
+      >
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <AdaptHeader title={scenario.title} />
 
-      {/* ── Body ───────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 176px' }}>
+        {/* ── Body ─────────────────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 176px' }}>
+          {/* Left column */}
+          <div
+            style={{
+              padding:       '20px 20px 0',
+              display:       'flex',
+              flexDirection: 'column',
+              gap:           22,
+              borderRight:   '1px solid var(--border)',
+            }}
+          >
+            <MutationsSection mutations={scenario.mutations} />
+            <InheritedSection inherited={scenario.inherited} />
+            <ExportBadge
+              modified={scenario.mutations.length}
+              inherited={scenario.inherited.length}
+            />
+            <div style={{ height: 0 }} />
+          </div>
 
-        {/* Left column */}
-        <div
-          style={{
-            padding: '20px 20px 0',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 22,
-            borderRight: '1px solid var(--border)',
-          }}
-        >
-          <MutationsSection mutations={scenario.mutations} />
-          <InheritedSection inherited={scenario.inherited} />
-          <ExportBadge
-            modified={scenario.mutations.length}
-            inherited={scenario.inherited.length}
-          />
-          <div style={{ height: 0 }} />
+          {/* Right column: before / after preview */}
+          <AdaptPreview source={source} target={target ?? source} />
         </div>
 
-        {/* Right column: before / after preview */}
-        <AdaptPreview source={source} target={target ?? source} />
+        {/* ── Action bar ───────────────────────────────────────────────── */}
+        <AdaptActionBar
+          exportDone={exportDone}
+          refineOpen={refineOpen}
+          onExport={handleExport}
+          onToggleRefine={() => setRefineOpen((v) => !v)}
+        />
       </div>
 
-      {/* ── Action bar ─────────────────────────────────────────────────── */}
-      <AdaptActionBar
-        exportDone={exportDone}
-        showRefine={showRefine}
+      {/* ── Refine panel ─────────────────────────────────────────────── */}
+      <RefinePanel
+        open={refineOpen}
         refines={scenario.refine}
-        onExport={handleExport}
-        onToggleRefine={() => setShowRefine((v) => !v)}
-        onCloseRefine={() => setShowRefine(false)}
+        hints={ADAPT_HINTS}
+        accentColor="#ff9f43"
       />
     </div>
   )
@@ -616,89 +636,55 @@ function WatchFrame() {
 
 function AdaptActionBar({
   exportDone,
-  showRefine,
-  refines,
+  refineOpen,
   onExport,
   onToggleRefine,
-  onCloseRefine,
 }: {
-  exportDone: boolean
-  showRefine: boolean
-  refines: string[]
-  onExport: () => void
+  exportDone:     boolean
+  refineOpen:     boolean
+  onExport:       () => void
   onToggleRefine: () => void
-  onCloseRefine: () => void
 }) {
   return (
     <div
       style={{
-        borderTop: '1px solid var(--border)',
-        padding: '10px 20px',
-        display: 'flex',
+        borderTop:  '1px solid var(--border)',
+        padding:    '10px 20px',
+        display:    'flex',
         alignItems: 'center',
-        gap: 8,
+        gap:        8,
       }}
     >
-      <ActionBtn
-        label={exportDone ? '✓ Copié' : 'Export MCP'}
-        accent={exportDone}
-        onClick={onExport}
-      />
+      <ActionBtn label={exportDone ? '✓ Copié' : 'Export MCP'} accent={exportDone} onClick={onExport} />
       <ActionBtn label="Voir story" onClick={() => {}} />
       <div style={{ flex: 1 }} />
 
-      <div style={{ position: 'relative' }}>
-        <ActionBtn label="Affiner ↓" tinted onClick={onToggleRefine} />
-        {showRefine && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 6px)',
-              right: 0,
-              background: '#101012',
-              border: '1px solid var(--border-strong)',
-              borderRadius: 'var(--r-md)',
-              padding: '6px 4px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              minWidth: 200,
-              zIndex: 10,
-            }}
-          >
-            {refines.map((r) => (
-              <button
-                key={r}
-                onClick={onCloseRefine}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.04em',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--r-sm)',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  border: 'none',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
-                }}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <AdaptAffinerBtn open={refineOpen} onClick={onToggleRefine} />
     </div>
+  )
+}
+
+// ── AdaptAffinerBtn ───────────────────────────────────────────────────────────
+
+function AdaptAffinerBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontFamily:    'var(--font-mono)',
+        fontSize:      11,
+        letterSpacing: '0.06em',
+        color:         open ? '#ff4444' : ADAPT_ACCENT,
+        background:    open ? 'rgba(255,68,68,0.08)' : ADAPT_DIM,
+        border:        `1px solid ${open ? 'rgba(255,68,68,0.3)' : ADAPT_BORDER}`,
+        borderRadius:  'var(--r-sm)',
+        padding:       '5px 12px',
+        cursor:        'pointer',
+        transition:    'background 0.15s, color 0.15s, border-color 0.15s',
+      }}
+    >
+      {open ? 'Affiner ×' : 'Affiner'}
+    </button>
   )
 }
 

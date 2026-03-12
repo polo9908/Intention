@@ -2,6 +2,17 @@
 
 import { useState } from 'react'
 import type { AgentScenario, AgentNode, AgentSlider } from '@/types'
+import { RefinePanel }     from './RefinePanel'
+import type { RefineHint } from './RefinePanel'
+
+// ── Refine hints (one per option in SC_ADVISOR.refine) ────────────────────────
+
+const AGENT_HINTS: RefineHint[] = [
+  { prop: 'persona.tone',    from: 'rassurant',  to: 'expert'      },
+  { prop: 'nodes.count',     from: '5',          to: '6 +fiscal'   },
+  { prop: 'locale',          from: 'fr',         to: 'fr · en · es' },
+  { prop: 'escalade.seuil',  from: '85%',        to: '92%'         },
+]
 
 // ── Status palette ────────────────────────────────────────────────────────────
 
@@ -25,7 +36,7 @@ export function AgentResultCard({ scenario }: { scenario: AgentScenario }) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [sliders, setSliders]         = useState<AgentSlider[]>(scenario.sliders)
   const [exportDone, setExportDone]   = useState(false)
-  const [showRefine, setShowRefine]   = useState(false)
+  const [refineOpen, setRefineOpen]   = useState(false)
 
   const updateSlider = (key: string, value: number) =>
     setSliders((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)))
@@ -40,55 +51,56 @@ export function AgentResultCard({ scenario }: { scenario: AgentScenario }) {
     setExpandedIdx((prev) => (prev === idx ? null : idx))
 
   return (
-    <div
-      style={{
-        background: 'var(--surface-1)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r-lg)',
-        overflow: 'hidden',
-        width: '100%',
-      }}
-    >
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <AgentCardHeader title={scenario.title} />
-
-      {/* ── Body ───────────────────────────────────────────────────────── */}
+    <div>
+      {/* ── Card shell ─────────────────────────────────────────────────── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 180px',
+          background:   'var(--surface-1)',
+          border:       '1px solid var(--border)',
+          borderRadius: refineOpen ? 'var(--r-lg) var(--r-lg) 0 0' : 'var(--r-lg)',
+          overflow:     'hidden',
+          width:        '100%',
+          transition:   'border-radius 0.01s',
         }}
       >
-        {/* Left column: nodes + sliders */}
-        <div
-          style={{
-            padding: '20px 20px 0',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 22,
-            borderRight: '1px solid var(--border)',
-          }}
-        >
-          <NodesSection
-            nodes={scenario.nodes}
-            expandedIdx={expandedIdx}
-            onToggle={toggleNode}
-          />
-          <SlidersSection sliders={sliders} onChange={updateSlider} />
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <AgentCardHeader title={scenario.title} />
+
+        {/* ── Body ─────────────────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px' }}>
+          {/* Left column: nodes + sliders */}
+          <div
+            style={{
+              padding: '20px 20px 0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 22,
+              borderRight: '1px solid var(--border)',
+            }}
+          >
+            <NodesSection nodes={scenario.nodes} expandedIdx={expandedIdx} onToggle={toggleNode} />
+            <SlidersSection sliders={sliders} onChange={updateSlider} />
+          </div>
+
+          {/* Right column: persona */}
+          <PersonaGrid persona={scenario.persona} />
         </div>
 
-        {/* Right column: persona */}
-        <PersonaGrid persona={scenario.persona} />
+        {/* ── Action bar ───────────────────────────────────────────────── */}
+        <AgentActionBar
+          exportDone={exportDone}
+          refineOpen={refineOpen}
+          onExport={handleExport}
+          onToggleRefine={() => setRefineOpen((v) => !v)}
+        />
       </div>
 
-      {/* ── Action bar ─────────────────────────────────────────────────── */}
-      <AgentActionBar
-        exportDone={exportDone}
-        showRefine={showRefine}
+      {/* ── Refine panel ─────────────────────────────────────────────── */}
+      <RefinePanel
+        open={refineOpen}
         refines={scenario.refine}
-        onExport={handleExport}
-        onToggleRefine={() => setShowRefine((v) => !v)}
-        onCloseRefine={() => setShowRefine(false)}
+        hints={AGENT_HINTS}
+        accentColor="#69ff9c"
       />
     </div>
   )
@@ -484,93 +496,60 @@ function PersonaTile({ value, label }: { value: string; label: string }) {
 
 function AgentActionBar({
   exportDone,
-  showRefine,
-  refines,
+  refineOpen,
   onExport,
   onToggleRefine,
-  onCloseRefine,
 }: {
-  exportDone: boolean
-  showRefine: boolean
-  refines: string[]
-  onExport: () => void
+  exportDone:     boolean
+  refineOpen:     boolean
+  onExport:       () => void
   onToggleRefine: () => void
-  onCloseRefine: () => void
 }) {
   return (
     <div
       style={{
-        borderTop: '1px solid var(--border)',
-        padding: '10px 20px',
-        display: 'flex',
+        borderTop:  '1px solid var(--border)',
+        padding:    '10px 20px',
+        display:    'flex',
         alignItems: 'center',
-        gap: 8,
+        gap:        8,
       }}
     >
-      <ActionBtn
-        label={exportDone ? '✓ Copié' : 'Export MCP'}
-        accent={exportDone}
-        onClick={onExport}
-      />
+      <ActionBtn label={exportDone ? '✓ Copié' : 'Export MCP'} accent={exportDone} onClick={onExport} />
       <ActionBtn label="Voir story" onClick={() => {}} />
 
       <div style={{ flex: 1 }} />
 
-      <div style={{ position: 'relative' }}>
-        <ActionBtn label="Affiner ↓" tinted onClick={onToggleRefine} />
-
-        {showRefine && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 6px)',
-              right: 0,
-              background: '#101012',
-              border: '1px solid var(--border-strong)',
-              borderRadius: 'var(--r-md)',
-              padding: '6px 4px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              minWidth: 200,
-              zIndex: 10,
-            }}
-          >
-            {refines.map((r) => (
-              <button
-                key={r}
-                onClick={onCloseRefine}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.04em',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--r-sm)',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  border: 'none',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
-                }}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <AffinerBtn open={refineOpen} onClick={onToggleRefine} />
     </div>
   )
 }
+
+// ── AffinerBtn ────────────────────────────────────────────────────────────────
+
+function AffinerBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontFamily:    'var(--font-mono)',
+        fontSize:      11,
+        letterSpacing: '0.06em',
+        color:         open ? '#ff4444' : '#69ff9c',
+        background:    open ? 'rgba(255,68,68,0.08)' : 'rgba(105,255,156,0.08)',
+        border:        `1px solid ${open ? 'rgba(255,68,68,0.3)' : 'rgba(105,255,156,0.25)'}`,
+        borderRadius:  'var(--r-sm)',
+        padding:       '5px 12px',
+        cursor:        'pointer',
+        transition:    'background 0.15s, color 0.15s, border-color 0.15s',
+      }}
+    >
+      {open ? 'Affiner ×' : 'Affiner'}
+    </button>
+  )
+}
+
+// ── ActionBtn ─────────────────────────────────────────────────────────────────
 
 function ActionBtn({
   label,

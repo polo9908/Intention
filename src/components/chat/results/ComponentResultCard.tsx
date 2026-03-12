@@ -2,17 +2,29 @@
 
 import { useRef, useState } from 'react'
 import type { ComponentScenario, DesignToken } from '@/types'
+import { RefinePanel }      from './RefinePanel'
+import type { RefineHint }  from './RefinePanel'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type PreviewState = 'Default' | 'Hover' | 'Error' | 'Success'
 
+// ── Refine hints (one per option in SC_CONFIRMATION.refine) ───────────────────
+
+const COMPONENT_HINTS: RefineHint[] = [
+  { prop: 'color.status.trust',  from: '#1a6bff', to: '#2952cc', fromColor: '#1a6bff', toColor: '#2952cc' },
+  { prop: 'theme.mode',          from: 'dark',    to: 'light'  },
+  { prop: 'states.count',        from: '3',       to: '4 +error' },
+  { prop: 'spacing.breath',      from: '32px',    to: '20px'   },
+]
+
 // ── ComponentResultCard ───────────────────────────────────────────────────────
 
 export function ComponentResultCard({ scenario }: { scenario: ComponentScenario }) {
-  const [tokens, setTokens] = useState<DesignToken[]>(scenario.tokens)
+  const [tokens, setTokens]         = useState<DesignToken[]>(scenario.tokens)
   const [previewState, setPreviewState] = useState<PreviewState>('Default')
   const [exportDone, setExportDone] = useState(false)
+  const [refineOpen, setRefineOpen] = useState(false)
 
   const updateToken = (idx: number, updated: DesignToken) =>
     setTokens((prev) => prev.map((t, i) => (i === idx ? updated : t)))
@@ -24,56 +36,69 @@ export function ComponentResultCard({ scenario }: { scenario: ComponentScenario 
   }
 
   return (
-    <div
-      style={{
-        background: 'var(--surface-1)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r-lg)',
-        overflow: 'hidden',
-        width: '100%',
-      }}
-    >
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <CardHeader title={scenario.title} />
-
-      {/* ── Body (2 columns) ───────────────────────────────────────────── */}
+    <div>
+      {/* ── Card shell ─────────────────────────────────────────────────── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 188px',
-          gap: 0,
+          background:   'var(--surface-1)',
+          border:       '1px solid var(--border)',
+          borderRadius: refineOpen ? 'var(--r-lg) var(--r-lg) 0 0' : 'var(--r-lg)',
+          overflow:     'hidden',
+          width:        '100%',
+          transition:   'border-radius 0.01s',
         }}
       >
-        {/* Left column */}
+        {/* ── Header ───────────────────────────────────────────────────── */}
+        <CardHeader title={scenario.title} />
+
+        {/* ── Body (2 columns) ─────────────────────────────────────────── */}
         <div
           style={{
-            padding: '20px 20px 0',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 20,
-            borderRight: '1px solid var(--border)',
+            display: 'grid',
+            gridTemplateColumns: '1fr 188px',
+            gap: 0,
           }}
         >
-          <TokensSection tokens={tokens} onUpdate={updateToken} />
-          <ComponentsSection components={scenario.components} />
-          <RulesSection rules={scenario.rules} />
+          {/* Left column */}
+          <div
+            style={{
+              padding: '20px 20px 0',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              borderRight: '1px solid var(--border)',
+            }}
+          >
+            <TokensSection tokens={tokens} onUpdate={updateToken} />
+            <ComponentsSection components={scenario.components} />
+            <RulesSection rules={scenario.rules} />
+          </div>
+
+          {/* Right column — phone preview */}
+          <PhonePreview
+            title={scenario.title}
+            activeState={previewState}
+            onStateChange={setPreviewState}
+            primaryColor={tokens[0]?.swatch ?? '#1a6bff'}
+          />
         </div>
 
-        {/* Right column — phone preview */}
-        <PhonePreview
-          title={scenario.title}
-          activeState={previewState}
-          onStateChange={setPreviewState}
-          primaryColor={tokens[0]?.swatch ?? '#1a6bff'}
+        {/* ── Action bar ───────────────────────────────────────────────── */}
+        <ActionBar
+          onExport={handleExport}
+          exportDone={exportDone}
+          story={scenario.story}
+          refineOpen={refineOpen}
+          onToggleRefine={() => setRefineOpen((v) => !v)}
         />
       </div>
 
-      {/* ── Action bar ─────────────────────────────────────────────────── */}
-      <ActionBar
-        onExport={handleExport}
-        exportDone={exportDone}
-        story={scenario.story}
+      {/* ── Refine panel (slides in below card) ──────────────────────── */}
+      <RefinePanel
+        open={refineOpen}
         refines={scenario.refine}
+        hints={COMPONENT_HINTS}
+        accentColor="#c8ff00"
       />
     </div>
   )
@@ -654,101 +679,63 @@ function ActionBar({
   onExport,
   exportDone,
   story,
-  refines,
+  refineOpen,
+  onToggleRefine,
 }: {
-  onExport: () => void
-  exportDone: boolean
-  story: string
-  refines: string[]
+  onExport:       () => void
+  exportDone:     boolean
+  story:          string
+  refineOpen:     boolean
+  onToggleRefine: () => void
 }) {
-  const [showRefine, setShowRefine] = useState(false)
   const _ = story // consumed
 
   return (
     <div
       style={{
         borderTop: '1px solid var(--border)',
-        padding: '10px 20px',
-        display: 'flex',
+        padding:   '10px 20px',
+        display:   'flex',
         alignItems: 'center',
         gap: 8,
       }}
     >
-      {/* Export MCP */}
-      <ActionButton
-        label={exportDone ? '✓ Copié' : 'Export MCP'}
-        accent={exportDone}
-        onClick={onExport}
-      />
-
-      {/* Voir story */}
-      <ActionButton
-        label="Voir story"
-        onClick={() => {}}
-      />
+      <ActionButton label={exportDone ? '✓ Copié' : 'Export MCP'} accent={exportDone} onClick={onExport} />
+      <ActionButton label="Voir story" onClick={() => {}} />
 
       <div style={{ flex: 1 }} />
 
-      {/* Affiner — dropdown */}
-      <div style={{ position: 'relative' }}>
-        <ActionButton
-          label="Affiner ↓"
-          tinted
-          onClick={() => setShowRefine((v) => !v)}
-        />
-
-        {showRefine && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 6px)',
-              right: 0,
-              background: '#101012',
-              border: '1px solid var(--border-strong)',
-              borderRadius: 'var(--r-md)',
-              padding: '6px 4px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              minWidth: 200,
-              zIndex: 10,
-            }}
-          >
-            {refines.map((r) => (
-              <button
-                key={r}
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.04em',
-                  padding: '7px 12px',
-                  borderRadius: 'var(--r-sm)',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  background: 'transparent',
-                  border: 'none',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-hover)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
-                }}
-                onClick={() => setShowRefine(false)}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Affiner toggle — turns red when panel is open */}
+      <AffinerButton open={refineOpen} onClick={onToggleRefine} />
     </div>
   )
 }
+
+// ── AffinerButton ─────────────────────────────────────────────────────────────
+
+function AffinerButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontFamily:    'var(--font-mono)',
+        fontSize:      11,
+        letterSpacing: '0.06em',
+        color:         open ? '#ff4444' : 'var(--accent)',
+        background:    open ? 'rgba(255,68,68,0.08)' : 'var(--accent-dim)',
+        border:        `1px solid ${open ? 'rgba(255,68,68,0.3)' : 'var(--accent-border)'}`,
+        borderRadius:  'var(--r-sm)',
+        padding:       '5px 12px',
+        cursor:        'pointer',
+        transition:    'background 0.15s, color 0.15s, border-color 0.15s',
+      }}
+    >
+      {open ? 'Affiner ×' : 'Affiner'}
+    </button>
+  )
+}
+
+// ── ActionButton ──────────────────────────────────────────────────────────────
 
 function ActionButton({
   label,
