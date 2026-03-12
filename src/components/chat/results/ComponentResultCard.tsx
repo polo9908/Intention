@@ -202,7 +202,10 @@ export function ComponentResultCard({ scenario }: { scenario: ComponentScenario 
             title={scenario.title}
             activeState={previewState}
             onStateChange={setPreviewState}
-            primaryColor={tokens[0]?.swatch ?? '#1a6bff'}
+            primaryColor={tokens.find(t => t.name === 'color.status.trust')?.swatch  ?? '#1a6bff'}
+            amountColor={tokens.find(t => t.name === 'color.amount.high')?.swatch    ?? '#f5f0e8'}
+            fontWeight={tokens.find(t => t.name === 'typography.weight')?.value      ?? '500'}
+            spacing={parseInt(tokens.find(t => t.name === 'spacing.breath')?.value   ?? '32') || 32}
           />
         </div>
 
@@ -550,11 +553,17 @@ function PhonePreview({
   activeState,
   onStateChange,
   primaryColor,
+  amountColor,
+  fontWeight,
+  spacing,
 }: {
   title: string
   activeState: PreviewState
   onStateChange: (s: PreviewState) => void
   primaryColor: string
+  amountColor:  string
+  fontWeight:   string
+  spacing:      number
 }) {
   return (
     <div
@@ -603,7 +612,14 @@ function PhonePreview({
             overflow: 'hidden',
           }}
         >
-          <PreviewScreen state={activeState} primaryColor={primaryColor} title={title} />
+          <PreviewScreen
+            state={activeState}
+            primaryColor={primaryColor}
+            amountColor={amountColor}
+            fontWeight={fontWeight}
+            spacing={spacing}
+            title={title}
+          />
         </div>
       </div>
 
@@ -666,13 +682,23 @@ function StateButton({
 function PreviewScreen({
   state,
   primaryColor,
+  amountColor,
+  fontWeight,
+  spacing,
   title,
 }: {
-  state: PreviewState
+  state:        PreviewState
   primaryColor: string
-  title: string
+  amountColor:  string
+  fontWeight:   string
+  spacing:      number
+  title:        string
 }) {
-  const _ = title // consumed to avoid unused var warning
+  const _ = title
+
+  // Scale spacing to phone viewport (full card ~600px → phone content ~130px ≈ 0.22×)
+  const pad     = Math.max(5, Math.round(spacing * 0.22))
+  const padSide = Math.max(4, Math.round(spacing * 0.18))
 
   const bg        = state === 'Error'   ? 'rgba(255, 68, 68, 0.06)'
                   : state === 'Success' ? 'rgba(200, 255, 0, 0.04)'
@@ -688,6 +714,11 @@ function PreviewScreen({
                    : state === 'Success' ? '✓ Confirmé'
                    : 'Confirmer'
 
+  // Amount text color: use token unless error/success overrides
+  const amountTextColor = state === 'Error'   ? '#ff4444'
+                        : state === 'Success' ? '#c8ff00'
+                        : amountColor
+
   return (
     <div
       style={{
@@ -696,9 +727,9 @@ function PreviewScreen({
         background: bg,
         display: 'flex',
         flexDirection: 'column',
-        padding: '10px 8px 8px',
-        gap: 6,
-        transition: 'background 0.2s',
+        padding: `${pad}px ${padSide}px ${padSide}px`,
+        gap: Math.max(3, Math.round(spacing * 0.12)),
+        transition: 'background 0.2s, padding 0.25s',
       }}
     >
       {/* Header row */}
@@ -724,15 +755,13 @@ function PreviewScreen({
       >
         <div
           style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 15,
-            color: state === 'Error' ? '#ff4444'
-                 : state === 'Success' ? '#c8ff00'
-                 : 'var(--text)',
+            fontFamily:    'var(--font-serif)',
+            fontSize:      15,
+            color:         amountTextColor,
             letterSpacing: '-0.02em',
-            fontWeight: 400,
-            lineHeight: 1,
-            transition: 'color 0.2s',
+            fontWeight:    Number(fontWeight) || 400,
+            lineHeight:    1,
+            transition:    'color 0.2s, font-weight 0.15s',
           }}
         >
           €8 450
