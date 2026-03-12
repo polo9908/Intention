@@ -63,6 +63,31 @@ export interface AdaptScenario {
 
 export type Scenario = ComponentScenario | AgentScenario | AdaptScenario
 
+// ── Persisted Specs ───────────────────────────────────────────────────────────
+// Extend each Scenario with store identity fields (id, prompt, createdAt).
+// These are the types held in the Zustand spec store and written to IndexedDB.
+
+export interface ComponentSpec extends ComponentScenario {
+  id:        string
+  prompt:    string
+  createdAt: number
+}
+
+export interface AgentSpec extends AgentScenario {
+  id:        string
+  prompt:    string
+  createdAt: number
+}
+
+export interface AdaptSpec extends AdaptScenario {
+  id:        string
+  prompt:    string
+  createdAt: number
+}
+
+/** Tagged union of all persisted spec types. */
+export type SpecResult = ComponentSpec | AgentSpec | AdaptSpec
+
 // ── History ──────────────────────────────────────────────────────────────────
 
 export interface HistoryEntry {
