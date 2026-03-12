@@ -70,6 +70,20 @@ input, textarea { font: inherit; }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
+/* ── Live agent dot pulse ───────────────────────────────────────────────────── */
+@keyframes live-glow {
+  0%, 100% { box-shadow: 0 0 4px #69ff9c66; }
+  50%       { box-shadow: 0 0 10px #69ff9ccc, 0 0 18px #69ff9c44; }
+}
+.dot-live {
+  animation: live-glow 2.2s ease-in-out infinite;
+}
+
+/* ── Latency bar fill ────────────────────────────────────────────────────────── */
+@keyframes bar-grow {
+  from { width: 0; }
+}
+
 /* ── ThinkingSequence dot pulse ─────────────────────────────────────────────── */
 @keyframes dot-pulse {
   0%, 100% { opacity: 1; }
