@@ -6,7 +6,7 @@ import { ThinkingSequence } from '@/components/chat/ThinkingSequence'
 import { ComponentResultCard } from '@/components/chat/results/ComponentResultCard'
 import { AgentResultCard }     from '@/components/chat/results/AgentResultCard'
 import { AdaptResultCard }     from '@/components/chat/results/AdaptResultCard'
-import { matchScenario } from '@/lib/scenarios'
+import { matchScenario, SCENARIOS } from '@/lib/scenarios'
 
 // ── Thinking steps by intent ──────────────────────────────────────────────────
 
@@ -36,20 +36,25 @@ function getThinkingSteps(text: string): string[] {
   ]
 }
 
-// ── Quick prompts ─────────────────────────────────────────────────────────────
+// ── Quick prompts (each pinned to a specific SC constant) ─────────────────────
 
-const QUICK_PROMPTS = [
+type ScenarioKey = keyof typeof SCENARIOS
+
+const QUICK_PROMPTS: Array<{ label: string; text: string; scenarioKey: ScenarioKey }> = [
   {
-    label: 'ConfirmationTransfer',
-    text: 'Un composant de confirmation de virement pour une appli fintech. Rassurant, sobre, biométrie requise au-dessus de 5 000 €.',
+    label:       'ConfirmationTransfer',
+    text:        'Un composant de confirmation de virement pour une appli fintech. Rassurant, sobre, biométrie requise au-dessus de 5 000 €.',
+    scenarioKey: 'confirmation',
   },
   {
-    label: 'VoltaAdvisor',
-    text: "Un agent conseiller financier pour Volta. Empathique, lent, humble face à l'incertitude. Escalade humain si anxiété > 85%.",
+    label:       'VoltaAdvisor',
+    text:        "Un agent conseiller financier pour Volta. Empathique, lent, humble face à l'incertitude. Escalade humain si anxiété > 85%.",
+    scenarioKey: 'advisor',
   },
   {
-    label: 'AmountDisplay → Watch',
-    text: "Adapter le composant AmountDisplay pour Apple Watch Series 9. Réduire, haptic feedback, 2 lignes max.",
+    label:       'AmountDisplay → Watch',
+    text:        "Adapter le composant AmountDisplay pour Apple Watch Series 9. Réduire, haptic feedback, 2 lignes max.",
+    scenarioKey: 'wearable',
   },
 ]
 
@@ -64,6 +69,12 @@ export function ChatView() {
   const bottomRef    = useRef<HTMLDivElement>(null)
   const hasMessages  = messages.length > 0
   const isThinking   = thinkingId !== null
+
+  // Tracks which SC constant to use for the next pending message.
+  // Set when user clicks a quick-prompt pill; cleared on submit (free text = null).
+  const pendingScenarioKey  = useRef<ScenarioKey | null>(null)
+  // Maps msgId → scenarioKey so onComplete can look up the right SC object.
+  const scenarioKeyForMsg   = useRef<Record<string, ScenarioKey>>({})
 
   /* ── Auto-resize textarea ── */
   const resize = useCallback(() => {
@@ -86,6 +97,11 @@ export function ChatView() {
     if (!text || isThinking) return
     const id = addUserMessage(text)
     setThinkingId(id)
+    // If a quick-prompt key is waiting, pin it to this msgId then clear
+    if (pendingScenarioKey.current) {
+      scenarioKeyForMsg.current[id] = pendingScenarioKey.current
+      pendingScenarioKey.current = null
+    }
     setDraft('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
   }, [draft, addUserMessage, isThinking])
@@ -97,8 +113,9 @@ export function ChatView() {
     }
   }
 
-  const fillQuick = (text: string) => {
+  const fillQuick = (text: string, scenarioKey: ScenarioKey) => {
     setDraft(text)
+    pendingScenarioKey.current = scenarioKey
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
@@ -172,8 +189,8 @@ export function ChatView() {
                 marginTop: 6,
               }}
             >
-              {QUICK_PROMPTS.map(({ label, text }) => (
-                <QuickPill key={label} label={label} onClick={() => fillQuick(text)} />
+              {QUICK_PROMPTS.map(({ label, text, scenarioKey }) => (
+                <QuickPill key={label} label={label} onClick={() => fillQuick(text, scenarioKey)} />
               ))}
             </div>
           </div>
@@ -228,7 +245,12 @@ export function ChatView() {
                       <ThinkingSequence
                         steps={getThinkingSteps(msg.text)}
                         onComplete={() => {
-                          const scenario = matchScenario(msg.text ?? '', messages.length)
+                          // Use pinned SC constant if set (quick prompt), else fuzzy-match
+                          const key      = scenarioKeyForMsg.current[msg.id]
+                          const scenario = key
+                            ? SCENARIOS[key]
+                            : matchScenario(msg.text ?? '', messages.length)
+                          delete scenarioKeyForMsg.current[msg.id]
                           addResult(scenario, null)
                           setThinkingId(null)
                         }}
