@@ -1,15 +1,18 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface RefineHint {
-  prop:       string
-  from:       string
-  to:         string
-  fromColor?: string   // optional hex swatch for colour diffs
-  toColor?:   string
+  prop:         string
+  from:         string
+  to:           string
+  fromColor?:   string      // optional hex swatch for colour diffs
+  toColor?:     string
+  previewFrom?: ReactNode   // visual mini "before" render
+  previewTo?:   ReactNode   // visual mini "after" render
 }
 
 // ── RefinePanel ───────────────────────────────────────────────────────────────
@@ -314,8 +317,67 @@ function DiffPreview({
             survolez<br />une option
           </span>
         </div>
+
+      ) : hint.previewFrom != null ? (
+        /* ── Visual comparison ─────────────────────────────────────────── */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+
+          {/* Prop label */}
+          <span
+            style={{
+              fontFamily:    'var(--font-mono)',
+              fontSize:      9,
+              color:         'var(--text-secondary)',
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {hint.prop}
+          </span>
+
+          {/* Side-by-side visual */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center' }}>
+
+            {/* Before */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span
+                style={{
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      8,
+                  color:         '#ff6b6b',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {hint.from}
+              </span>
+              {hint.previewFrom}
+            </div>
+
+            {/* Arrow */}
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1 }}>→</span>
+
+            {/* After */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span
+                style={{
+                  fontFamily:    'var(--font-mono)',
+                  fontSize:      8,
+                  color:         accentColor,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {hint.to}
+              </span>
+              {hint.previewTo}
+            </div>
+
+          </div>
+        </div>
+
       ) : (
-        /* ── Diff block ────────────────────────────────────────────────── */
+        /* ── Text diff fallback ────────────────────────────────────────── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
 
           {/* Prop label */}

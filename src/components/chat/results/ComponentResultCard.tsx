@@ -9,13 +9,141 @@ import type { RefineHint }  from './RefinePanel'
 
 type PreviewState = 'Default' | 'Hover' | 'Error' | 'Success'
 
+// ── Mini visual previews ───────────────────────────────────────────────────────
+
+function MiniConfirmBtn({ bg }: { bg: string }) {
+  return (
+    <div
+      style={{
+        padding: '5px 10px',
+        background: bg,
+        borderRadius: 4,
+        fontFamily: 'var(--font-mono)',
+        fontSize: 8,
+        color: '#fff',
+        textAlign: 'center',
+        letterSpacing: '0.06em',
+      }}
+    >
+      Confirmer
+    </div>
+  )
+}
+
+function MiniThemeScreen({ dark }: { dark: boolean }) {
+  return (
+    <div
+      style={{
+        borderRadius: 4,
+        border: '1px solid var(--border-strong)',
+        background: dark ? '#0c0c0e' : '#f0f0f2',
+        padding: '6px 8px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+      }}
+    >
+      <div style={{ width: '60%', height: 3, borderRadius: 1, background: dark ? '#2a2a30' : '#d0d0d5' }} />
+      <div style={{ width: '40%', height: 8, borderRadius: 2, background: dark ? '#111115' : '#e8e8ec' }} />
+      <div
+        style={{
+          padding: '3px 6px',
+          background: '#1a6bff',
+          borderRadius: 3,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 7,
+          color: '#fff',
+          textAlign: 'center',
+        }}
+      >
+        btn
+      </div>
+    </div>
+  )
+}
+
+function MiniStates({ count }: { count: number }) {
+  const STATE_COLORS = ['#999', '#4a9eff', '#c8ff00', '#ff4444']
+  const STATE_LABELS = ['def', 'hov', 'ok', 'err']
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+      {Array.from({ length: count }, (_, i) => (
+        <div
+          key={i}
+          style={{
+            padding: '2px 6px',
+            border: `1px solid ${STATE_COLORS[i]}55`,
+            borderRadius: 3,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 7,
+            color: STATE_COLORS[i],
+            letterSpacing: '0.06em',
+          }}
+        >
+          {STATE_LABELS[i]}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function MiniSpacing({ px }: { px: number }) {
+  const inner = Math.round(px * 0.18)
+  return (
+    <div
+      style={{
+        border: '1px solid var(--border-strong)',
+        borderRadius: 4,
+        padding: inner,
+        background: 'var(--surface-1)',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          height: 14,
+          background: 'var(--surface-2)',
+          borderRadius: 2,
+          border: '1px solid var(--border)',
+        }}
+      />
+    </div>
+  )
+}
+
 // ── Refine hints (one per option in SC_CONFIRMATION.refine) ───────────────────
 
 const COMPONENT_HINTS: RefineHint[] = [
-  { prop: 'color.status.trust',  from: '#1a6bff', to: '#2952cc', fromColor: '#1a6bff', toColor: '#2952cc' },
-  { prop: 'theme.mode',          from: 'dark',    to: 'light'  },
-  { prop: 'states.count',        from: '3',       to: '4 +error' },
-  { prop: 'spacing.breath',      from: '32px',    to: '20px'   },
+  {
+    prop: 'color.status.trust',
+    from: '#1a6bff',
+    to: '#2952cc',
+    fromColor: '#1a6bff',
+    toColor: '#2952cc',
+    previewFrom: <MiniConfirmBtn bg="#1a6bff" />,
+    previewTo:   <MiniConfirmBtn bg="#2952cc" />,
+  },
+  {
+    prop: 'theme.mode',
+    from: 'dark',
+    to: 'light',
+    previewFrom: <MiniThemeScreen dark={true} />,
+    previewTo:   <MiniThemeScreen dark={false} />,
+  },
+  {
+    prop: 'states.count',
+    from: '3',
+    to: '4 +error',
+    previewFrom: <MiniStates count={3} />,
+    previewTo:   <MiniStates count={4} />,
+  },
+  {
+    prop: 'spacing.breath',
+    from: '32px',
+    to: '20px',
+    previewFrom: <MiniSpacing px={32} />,
+    previewTo:   <MiniSpacing px={20} />,
+  },
 ]
 
 // ── ComponentResultCard ───────────────────────────────────────────────────────
@@ -55,7 +183,7 @@ export function ComponentResultCard({ scenario }: { scenario: ComponentScenario 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 188px',
+            gridTemplateColumns: '3fr 7fr',
             gap: 0,
           }}
         >
@@ -439,9 +567,9 @@ function PhonePreview({
       {/* Phone frame */}
       <div
         style={{
-          width: 112,
-          height: 200,
-          borderRadius: 16,
+          width: 148,
+          height: 264,
+          borderRadius: 20,
           border: '1.5px solid var(--border-strong)',
           background: '#0c0c0e',
           overflow: 'hidden',
