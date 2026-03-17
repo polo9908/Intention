@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ContextsSidebar } from "./ContextsSidebar";
 import { SpecMatrix }      from "./SpecMatrix";
@@ -162,6 +163,21 @@ function SpecBuilderHeader({
           </label>
         </div>
       )}
+
+      {/* Network canvas link */}
+      <Link
+        href="/network"
+        className={cn(
+          "flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all duration-150",
+          "text-text-secondary hover:text-accent hover:bg-accent/5 border border-transparent hover:border-accent/30"
+        )}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Network
+      </Link>
 
       {/* Spacer */}
       <div className="flex-1" />
