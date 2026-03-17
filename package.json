@@ -18,7 +18,8 @@
     "framer-motion": "^12.5.0",
     "clsx": "^2.1.1",
     "tailwind-merge": "^3.0.2",
-    "idb": "^8.0.2"
+    "idb": "^8.0.2",
+    "@supabase/supabase-js": "^2.49.4"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
