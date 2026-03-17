@@ -13,6 +13,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ExportButton } from "@/components/Export";
 import { ContextsSidebar } from "./ContextsSidebar";
 import { SpecMatrix }      from "./SpecMatrix";
 import { LivePreview }     from "./LivePreview";
@@ -67,6 +68,7 @@ function SpecBuilderHeader({
   temperature,
   maxTokens,
   isSyncing,
+  currentSpec,
   onAgentNameChange,
   onModelChange,
   onTemperatureChange,
@@ -77,6 +79,7 @@ function SpecBuilderHeader({
   temperature: number;
   maxTokens: number;
   isSyncing: boolean;
+  currentSpec: import("@/types").AgentSpec | null;
   onAgentNameChange: (v: string) => void;
   onModelChange: (v: string) => void;
   onTemperatureChange: (v: number) => void;
@@ -164,6 +167,9 @@ function SpecBuilderHeader({
         </div>
       )}
 
+      {/* Export button */}
+      <ExportButton spec={currentSpec} />
+
       {/* Network canvas link */}
       <Link
         href="/network"
@@ -236,6 +242,7 @@ export function SpecBuilder() {
         temperature={temperature}
         maxTokens={maxTokens}
         isSyncing={isSyncing}
+        currentSpec={currentSpec}
         onAgentNameChange={setAgentName}
         onModelChange={(v) => setModel(v as typeof model)}
         onTemperatureChange={setTemperature}
