@@ -71,3 +71,38 @@ export interface AgentStats {
   successRate: number;
   lastActiveAt?: Timestamp;
 }
+
+// ---------------------------------------------------------------------------
+// Agent Spec — versioned configuration snapshot for an agent
+// ---------------------------------------------------------------------------
+
+/** A frozen, versioned snapshot of an agent's configuration */
+export interface AgentSpec {
+  id: ID;
+  /** Agent this spec belongs to */
+  agentId: ID;
+  name: string;
+  description: string;
+  /** Monotonically increasing version number */
+  version: number;
+  model: ClaudeModel;
+  systemPrompt: string;
+  maxTokens: number;
+  temperature: number;
+  capabilities: AgentCapability[];
+  metadata: Metadata;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/** One entry in a spec's change history */
+export interface SpecVersion {
+  id: ID;
+  specId: ID;
+  version: number;
+  /** Full snapshot of the spec at this version */
+  snapshot: AgentSpec;
+  /** Human-readable description of what changed */
+  changeMessage?: string;
+  createdAt: Timestamp;
+}
